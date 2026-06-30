@@ -1,0 +1,165 @@
+// Production data layer. The dev server uses an in-memory store with the same
+// shapes; switch to these models when you wire Postgres on Render.
+//
+//   1. set DATABASE_URL in .env
+//   2. npm i -D prisma && npm i @prisma/client
+//   3. npx prisma migrate dev --name init
+//   4. replace src/data/store.js repos with Prisma calls
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  citizen
+  collector
+  manager
+  csr
+  admin
+}
+
+enum OrgType {
+  collector
+  manager
+  csr
+}
+
+enum ReportStatus {
+  pending
+  claimed
+  in_progress
+  resolved
+  rejected
+}
+
+enum Volume {
+  small
+  medium
+  large
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(citizen)
+  points        Int      @default(0)
+  org           Organization? @relation(fields: [orgId], references: [id])
+  orgId         String?
+  reports       Report[]
+  pointTxns     PointTransaction[]
+  createdAt     DateTime @default(now())
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  type      OrgType
+  verified  Boolean  @default(false)
+  members   User[]
+  points    CollectionPoint[]
+  challenges Challenge[]
+  createdAt DateTime @default(now())
+}
+
+model CollectionPoint {
+  id            String   @id @default(uuid())
+  org           Organization @relation(fields: [orgId], references: [id])
+  orgId         String
+  name          String
+  lat           Float
+  lng           Float
+  type          String   // bank_sampah | pengepul
+  accepts       String[]
+  hours         String?
+  price         String?
+  howToRegister String?
+  jobs          PickupJob[]
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  reporterId  String
+  lat         Float
+  lng         Float
+  address     String?
+  photoUrl    String?
+  category    String?
+  volume      Volume?
+  status      ReportStatus @default(pending)
+  analysis    AiAnalysis?
+  jobs        PickupJob[]
+  events      CleanupEvent[]
+  createdAt   DateTime @default(now())
+}
+
+model AiAnalysis {
+  id        String   @id @default(uuid())
+  report    Report   @relation(fields: [reportId], references: [id])
+  reportId  String   @unique
+  isWaste   Boolean
+  category  String?
+  volume    Volume?
+  note      String?
+  model     String?
+  rawJson   Json?
+  createdAt DateTime @default(now())
+}
+
+model PickupJob {
+  id            String   @id @default(uuid())
+  report        Report?  @relation(fields: [reportId], references: [id])
+  reportId      String?
+  point         CollectionPoint? @relation(fields: [pointId], references: [id])
+  pointId       String?
+  collectorOrgId String?
+  status        String   @default("open") // open | accepted | completed
+  weightKg      Float?
+  valueIdr      Int?
+  createdAt     DateTime @default(now())
+}
+
+model CleanupEvent {
+  id              String   @id @default(uuid())
+  communityOrgId  String
+  report          Report?  @relation(fields: [reportId], references: [id])
+  reportId        String?
+  title           String
+  location        String?
+  scheduledAt     DateTime?
+  volunteersNeeded Int     @default(0)
+  status          String   @default("published")
+  participants    String[]
+  createdAt       DateTime @default(now())
+}
+
+model PointTransaction {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  points    Int
+  source    String
+  refId     String?
+  createdAt DateTime @default(now())
+}
+
+model Challenge {
+  id          String   @id @default(uuid())
+  csrOrg      Organization @relation(fields: [csrOrgId], references: [id])
+  csrOrgId    String
+  title       String
+  description String?
+  reward      String?
+  target      Int      @default(0)
+  progress    Int      @default(0)
+  deadline    DateTime?
+  status      String   @default("live")
+  createdAt   DateTime @default(now())
+}
