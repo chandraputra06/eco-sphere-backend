@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  citizen
+  collector
+  manager
+  csr
+  admin
+}
+
+enum OrgType {
+  collector
+  community
+  waste_mgmt
+  csr
+}
+
+enum ReportStatus {
+  pending
+  claimed
+  in_progress
+  resolved
+  rejected
+}
+
+enum Volume {
+  small
+  medium
+  large
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  phone        String?
+  avatar       String?  @db.LongText
+  role         Role     @default(citizen)
+  points       Int      @default(0)
+  org          Organization? @relation(fields: [orgId], references: [id])
+  orgId        String?
+  reports      Report[]
+  pointTxns    PointTransaction[]
+  createdAt    DateTime @default(now())
+}
+
+model Organization {
+  id         String   @id @default(uuid())
+  name       String
+  type       OrgType
+  verified   Boolean  @default(false)
+  members    User[]
+  points     CollectionPoint[]
+  challenges Challenge[]
+  createdAt  DateTime @default(now())
+}
+
+model CollectionPoint {
+  id            String @id @default(uuid())
+  org           Organization @relation(fields: [orgId], references: [id])
+  orgId         String
+  name          String
+  lat           Float
+  lng           Float
+  type          String
+  accepts       Json
+  hours         String?
+  price         String?
+  howToRegister String?
+  jobs          PickupJob[]
+}
+
+model Report {
+  id             String   @id @default(uuid())
+  reporter       User     @relation(fields: [reporterId], references: [id])
+  reporterId     String
+  lat            Float
+  lng            Float
+  address        String?
+  photoUrl       String?  @db.Text
+  category       String?
+  volume         Volume?
+  status         ReportStatus @default(pending)
+  claimedByOrgId String?
+  analysis       AiAnalysis?
+  jobs           PickupJob[]
+  events         CleanupEvent[]
+  createdAt      DateTime @default(now())
+}
+
+model AiAnalysis {
+  id        String  @id @default(uuid())
+  report    Report  @relation(fields: [reportId], references: [id])
+  reportId  String  @unique
+  isWaste   Boolean
+  category  String?
+  volume    Volume?
+  note      String? @db.Text
+  model     String?
+  rawJson   Json?
+  createdAt DateTime @default(now())
+}
+
+model PickupJob {
+  id             String  @id @default(uuid())
+  report         Report? @relation(fields: [reportId], references: [id])
+  reportId       String?
+  point          CollectionPoint? @relation(fields: [pointId], references: [id])
+  pointId        String?
+  collectorOrgId String?
+  status         String  @default("open")
+  weightKg       Float?
+  valueIdr       Int?
+  createdAt      DateTime @default(now())
+}
+
+model CleanupEvent {
+  id               String   @id @default(uuid())
+  communityOrgId   String
+  report           Report?  @relation(fields: [reportId], references: [id])
+  reportId         String?
+  title            String
+  location         String?
+  scheduledAt      DateTime?
+  volunteersNeeded Int      @default(0)
+  status           String   @default("published")
+  participants     Json
+  createdAt        DateTime @default(now())
+}
+
+model PointTransaction {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  points    Int
+  source    String
+  refId     String?
+  createdAt DateTime @default(now())
+}
+
+model Challenge {
+  id          String   @id @default(uuid())
+  csrOrg      Organization @relation(fields: [csrOrgId], references: [id])
+  csrOrgId    String
+  title       String
+  description String?  @db.Text
+  reward      String?
+  target      Int      @default(0)
+  progress    Int      @default(0)
+  deadline    DateTime?
+  status      String   @default("live")
+  createdAt   DateTime @default(now())
+}
