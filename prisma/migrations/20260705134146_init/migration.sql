@@ -4,6 +4,8 @@ CREATE TABLE `User` (
     `name` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `passwordHash` VARCHAR(191) NOT NULL,
+    `phone` VARCHAR(191) NULL,
+    `avatar` LONGTEXT NULL,
     `role` ENUM('citizen', 'collector', 'manager', 'csr', 'admin') NOT NULL DEFAULT 'citizen',
     `points` INTEGER NOT NULL DEFAULT 0,
     `orgId` VARCHAR(191) NULL,
@@ -17,7 +19,7 @@ CREATE TABLE `User` (
 CREATE TABLE `Organization` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
-    `type` ENUM('collector', 'manager', 'csr') NOT NULL,
+    `type` ENUM('collector', 'community', 'waste_mgmt', 'csr') NOT NULL,
     `verified` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
