@@ -159,8 +159,3 @@ model Challenge {
   status      String   @default("live")
   createdAt   DateTime @default(now())
 }
-
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
-}
