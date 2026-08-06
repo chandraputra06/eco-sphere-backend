@@ -1,5 +1,7 @@
 import { createApp } from './app.js'
 import { env } from './config/env.js'
+import { runAutoMigration } from './auto-migrate.js';
+runAutoMigration();
 
 const app = createApp()
 
