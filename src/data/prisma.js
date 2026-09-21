@@ -1,6 +1,6 @@
+// src/data/prisma.js — Prisma client singleton (aman untuk serverless Vercel)
 import { PrismaClient } from '@prisma/client'
 
-// Satu instance PrismaClient dipakai bersama (hindari koneksi berlebih saat dev --watch).
-const g = globalThis
-export const prisma = g.__ecoPrisma || new PrismaClient()
-if (process.env.NODE_ENV !== 'production') g.__ecoPrisma = prisma
+const globalForPrisma = globalThis
+export const prisma = globalForPrisma.__ecoPrisma ?? new PrismaClient()
+globalForPrisma.__ecoPrisma = prisma
