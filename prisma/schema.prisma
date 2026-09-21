@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -42,7 +42,7 @@ model User {
   email        String   @unique
   passwordHash String
   phone        String?
-  avatar       String?  @db.LongText
+  avatar       String?  @db.Text
   role         Role     @default(citizen)
   points       Int      @default(0)
   org          Organization? @relation(fields: [orgId], references: [id])
